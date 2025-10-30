@@ -35,7 +35,7 @@ migrate_working_dir/
 /build/
 build/
 
-# App assets (keep JSON tracked)
+# App assets（JSONは追跡、画像/動画は除外）
 assets/images/
 assets/videos/
 

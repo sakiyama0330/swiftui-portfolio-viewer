@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>写真ライブラリからメディアを選択するために必要です。</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>選択したメディアをアプリに保存するために必要です。</string>
+	<key>NSCameraUsageDescription</key>
+	<string>カメラから撮影して追加するために必要です。</string>
 </dict>
 </plist>

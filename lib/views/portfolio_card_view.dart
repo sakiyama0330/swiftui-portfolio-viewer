@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/portfolio_item.dart';
 
@@ -26,22 +27,7 @@ class PortfolioCardView extends StatelessWidget {
             ),
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: Image.asset(
-                'assets/${item.thumbnail}',
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: double.infinity,
-                    color: Colors.grey[800],
-                    child: Icon(
-                      Icons.photo,
-                      size: 40,
-                      color: Colors.grey[600],
-                    ),
-                  );
-                },
-              ),
+              child: _buildThumbnail(),
             ),
           ),
           // Title and Year
@@ -79,6 +65,33 @@ class PortfolioCardView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildThumbnail() {
+    // 最初の画像メディア、なければ動画のサムネ代替
+    final imageMedia = item.media.firstWhere(
+      (m) => m.kind == MediaKind.image,
+      orElse: () => item.media.isNotEmpty ? item.media.first : const MediaAsset(kind: MediaKind.image, path: ''),
+    );
+    if (imageMedia.path.isEmpty) {
+      return Container(color: Colors.grey[800]);
+    }
+    final path = imageMedia.path;
+    if (path.startsWith('images/') || path.startsWith('assets/')) {
+      final assetPath = path.startsWith('assets/') ? path : 'assets/$path';
+      return Image.asset(assetPath, fit: BoxFit.cover, width: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+        return Container(color: Colors.grey[800]);
+      });
+    }
+    return Image.file(
+      File(path),
+      fit: BoxFit.cover,
+      width: double.infinity,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(color: Colors.grey[800]);
+      },
     );
   }
 }

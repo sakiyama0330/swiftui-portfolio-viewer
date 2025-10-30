@@ -2,7 +2,7 @@
 
 ## 設定完了
 
-`pubspec.yaml`に`flutter_launcher_icons`を追加しました。
+`pubspec.yaml`に`flutter_launcher_icons`を追加しました。アーティストロゴ（白透過）をアイコンとして使用します。
 
 ## アイコンを生成する手順
 
@@ -12,7 +12,7 @@
 # 依存関係をインストール
 flutter pub get
 
-# アイコンを生成
+# アイコンを生成（ロゴから各プラットフォーム用に出力）
 dart run flutter_launcher_icons
 ```
 
@@ -41,7 +41,7 @@ flutter run -d chrome
 
 ## 注意事項
 
-- 元の画像は3840x2160pxと大きいので、自動的に適切なサイズにリサイズされます
+- 使用画像: `assets/images/sakiyama_logo_white.png`
 - iOS用のアイコンは透明度（alpha）が削除されます（`remove_alpha_ios: true`）
 - Web用は黒背景（#000000）で生成されます
 

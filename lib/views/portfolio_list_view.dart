@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 import '../models/portfolio_item.dart';
-import '../services/portfolio_service.dart';
 import 'portfolio_detail_view.dart';
 import 'portfolio_card_view.dart';
+import 'portfolio_new_view.dart';
+import '../services/portfolio_service.dart';
 
 class PortfolioListView extends StatefulWidget {
   const PortfolioListView({super.key});
@@ -15,15 +17,48 @@ class PortfolioListView extends StatefulWidget {
 class _PortfolioListViewState extends State<PortfolioListView> {
   List<PortfolioItem> _items = [];
   bool _isLoading = true;
+  VideoPlayerController? _bgController;
+  bool _bgReady = false;
 
   @override
   void initState() {
     super.initState();
     _loadPortfolio();
+    _initBackgroundVideo();
+  }
+
+  Future<void> _initBackgroundVideo() async {
+    try {
+      // 優先: 001_01.mov → 次点: 001_1.mov
+      final candidates = <String>[
+        'assets/videos/001_01.mov',
+        'assets/videos/001_1.mov',
+      ];
+      VideoPlayerController? created;
+      for (final p in candidates) {
+        try {
+          final c = VideoPlayerController.asset(p);
+          await c.initialize();
+          created = c;
+          break;
+        } catch (_) {}
+      }
+      if (created == null) return;
+      _bgController = created;
+      await _bgController!.setLooping(true);
+      await _bgController!.setVolume(0);
+      await _bgController!.play();
+      if (mounted) setState(() => _bgReady = true);
+    } catch (_) {}
   }
 
   Future<void> _loadPortfolio() async {
-    final items = await PortfolioService.loadPortfolio();
+    var items = await PortfolioService.loadPortfolio();
+    // 0件や極端に少ない場合は再シードを試みる
+    if (items.isEmpty) {
+      await PortfolioService.resetToAssets();
+      items = await PortfolioService.loadPortfolio();
+    }
     setState(() {
       _items = items;
       _isLoading = false;
@@ -34,6 +69,15 @@ class _PortfolioListViewState extends State<PortfolioListView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Image.asset(
+            'assets/images/sakiyama_logo_white.jpg',
+            width: 24,
+            height: 24,
+            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ),
+        ),
         title: const Text(
           'PORTFOLIO',
           style: TextStyle(
@@ -41,43 +85,83 @@ class _PortfolioListViewState extends State<PortfolioListView> {
             fontWeight: FontWeight.w300,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'リセット',
+            icon: const Icon(Icons.refresh),
+            onPressed: () async {
+              setState(() => _isLoading = true);
+              await PortfolioService.resetToAssets();
+              await _loadPortfolio();
+            },
+          )
+        ],
       ),
       backgroundColor: Colors.black,
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Colors.white,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (_bgController != null && _bgReady)
+            FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _bgController!.value.size.width,
+                height: _bgController!.value.size.height,
+                child: VideoPlayer(_bgController!),
               ),
             )
-          : _items.isEmpty
-              ? const Center(
-                  child: Text(
-                    'ポートフォリオが見つかりませんでした',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                )
-              : Column(
-                  children: [
+          else
+            Container(color: Colors.black),
+          Container(color: Colors.black.withOpacity(0.35)),
+          if (_isLoading)
+            const Center(child: CircularProgressIndicator(color: Colors.white))
+          else if (_items.isEmpty)
+            const Center(
+              child: Text(
+                'ポートフォリオが見つかりませんでした',
+                style: TextStyle(color: Colors.white70),
+              ),
+            )
+          else
+            Column(
+              children: [
                     Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
+                      child: ReorderableListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                         itemCount: _items.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 24),
+                        onReorder: (oldIndex, newIndex) async {
+                          if (newIndex > oldIndex) newIndex -= 1;
+                          setState(() {
+                            final item = _items.removeAt(oldIndex);
+                            _items.insert(newIndex, item);
+                          });
+                          await PortfolioService.savePortfolio(_items);
+                        },
                         itemBuilder: (context, index) {
                           final item = _items[index];
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PortfolioDetailView(item: item),
-                                ),
-                              );
+                          return Dismissible(
+                            key: ValueKey(item.id),
+                            background: Container(color: Colors.red),
+                            onDismissed: (d) async {
+                              setState(() {
+                                _items.removeAt(index);
+                              });
+                              await PortfolioService.savePortfolio(_items);
                             },
-                            child: PortfolioCardView(item: item),
+                            child: GestureDetector(
+                              onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => PortfolioDetailView(item: item)),
+                              );
+                              // 戻ってきたら最新データを再読込（追加/削除を反映）
+                              await _loadPortfolio();
+                            },
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 24),
+                                child: PortfolioCardView(item: item),
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -104,7 +188,7 @@ class _PortfolioListViewState extends State<PortfolioListView> {
                           const SizedBox(width: 8),
                           InkWell(
                             onTap: () async {
-                              final uri = Uri.parse('https://x.com/your_username');
+                              final uri = Uri.parse('https://x.com/sakiyama_VRC');
                               try {
                                 if (await canLaunchUrl(uri)) {
                                   await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -126,8 +210,32 @@ class _PortfolioListViewState extends State<PortfolioListView> {
                         ],
                       ),
                     ),
-                  ],
-                ),
+              ],
+            ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final created = await Navigator.push<PortfolioItem>(
+            context,
+            MaterialPageRoute(builder: (_) => const PortfolioNewView()),
+          );
+          if (created != null) {
+            setState(() {
+              _items.insert(0, created);
+            });
+            await PortfolioService.savePortfolio(_items);
+          }
+        },
+        backgroundColor: Colors.white,
+        child: const Icon(Icons.add, color: Colors.black),
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _bgController?.dispose();
+    super.dispose();
   }
 }
