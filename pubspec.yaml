@@ -1,0 +1,39 @@
+name: portfolio_viewer
+description: A Flutter portfolio viewer app for showcasing videos, images, and captions offline.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  video_player: ^2.8.2
+  url_launcher: ^6.2.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: false
+  ios: true
+  web:
+    generate: true
+    image_path: "web/icons/VRChat_3840x2160_2022-01-12_22-09-24.443 (3).png"
+    background_color: "#000000"
+  image_path: "web/icons/VRChat_3840x2160_2022-01-12_22-09-24.443 (3).png"
+  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/portfolio.json
+    - assets/images/
+    - assets/videos/001.mov
+    - assets/videos/002.mov
+

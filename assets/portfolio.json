@@ -1,0 +1,20 @@
+[
+  {
+    "id": "work001",
+    "title": "PLATEAU Rector Night",
+    "caption": "PLATEAU データを使用した夜景映像 Internet Floating#4 で公開",
+    "thumbnail": "images/HIMG0032.jpg",
+    "video": "videos/001.mov",
+    "tags": ["映像", "ドローン", "夜景"],
+    "year": 2025
+  },
+  {
+    "id": "work002",
+    "title": "PLATEAU Rector Night",
+    "caption": "PLATEAU データを使用した映像 Internet Floating#4 で公開",
+    "thumbnail": "images/HIMG0034.jpg",
+    "video": "videos/002.mov",
+    "tags": ["3DCG", "可視化", "シミュレーション"],
+    "year": 2025
+  }
+]
