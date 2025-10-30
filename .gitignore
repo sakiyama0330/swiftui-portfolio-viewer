@@ -35,6 +35,10 @@ migrate_working_dir/
 /build/
 build/
 
+# App assets (keep JSON tracked)
+assets/images/
+assets/videos/
+
 # Symbolication related
 app.*.symbols
 
